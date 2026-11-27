@@ -1,0 +1,23 @@
+{
+  "name": "空振りと見逃し",
+  "short_name": "空振りと見逃し",
+  "description": "雲を見て大雨の知らせを出す・出さないを選ぶ1日5問。基準を下げると見逃しは減り、空振りが増える",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e8f0f4",
+  "theme_color": "#e8f0f4",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
