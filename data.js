@@ -178,8 +178,8 @@
     return (R, lv) => {
       const days = strip(R, 10, [], (d) => noZero(d) && d.filter((x) => x.came).length >= 3 && d.filter((x) => !x.came).length >= 3);
       const cand = shuffle(R, [30, 40, 50, 60, 70, 80]).slice(0, lv === 0 ? 2 : 3).sort((a, b) => a - b), si = ri(R, 0, SIT.length - 1);
-      // 見せる基準の線は、空振り＋見逃しがいちばん少ない所
-      let best = 50, bm = 99; for (let t = 10; t <= 100; t += 5) { const o = tally(days, t); if (o.b + o.c < bm) { bm = o.b + o.c; best = t; } }
+      // 見せる基準の線は、空振り＋見逃しがいちばん少ない所（全部の整数を調べる。5刻みだと少ない所を見落とす。CodeRabbit #1）
+      let best = 50, bm = 99; for (let t = 0; t <= 101; t++) { const o = tally(days, t); if (o.b + o.c < bm) { bm = o.b + o.c; best = t; } }
       const ob = tally(days, best);
       return {
         type: "act", media: MEDIA.kazoe, q: SIT[si](), opts: shuffle(R, [ANS, ...cand.map((t) => `基準${t}以上`)]), ans: ANS, rev: false, v: `${si}.${cand.join(".")}.${days.map((x) => x.s + (x.came ? "+" : "")).join("")}`,

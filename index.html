@@ -209,6 +209,7 @@ text.krb-t.krb-hit,text.krb-t.krb-fa,text.krb-t.krb-miss,text.krb-t.krb-cn{font-
 html.a11y-dark .krb-sky{fill:#1c3346}html.a11y-dark .krb-paper{fill:#1d2430}html.a11y-dark .krb-t{fill:#eceae4;stroke:#1d2430cc}html.a11y-dark .krb-t.krb-tw{fill:#fff}html.a11y-dark .krb-gb{fill:#2a3240}html.a11y-dark .krb-grid line{stroke:#ffffff22}html.a11y-dark .krb-bar{fill:#4f5b6c}html.a11y-dark .krb-bar.go{fill:#7fa8e0}html.a11y-dark .krb-beam{fill:#eceae4}html.a11y-dark .krb-goarea{fill:#9cc3ff18}
 .more{font-size:.85rem;line-height:1.7;text-align:left}.more summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--ai2)}
 .xp{display:flex;flex-direction:column;gap:10px}
+.dtab-w{padding:0 .9rem}.dtab table{border-collapse:collapse;width:100%;table-layout:fixed;overflow-wrap:anywhere;font-size:.85rem;margin:4px 0}.dtab th,.dtab td{border-top:1px solid var(--line);padding:4px 6px;text-align:left}.dtab p{margin:4px 0}
 .x-res{margin:0;text-align:center;font-weight:900;font-size:1.15rem;padding:.5rem;border-radius:12px;border:2px solid var(--ok);background:var(--paper)}
 .x-map,.x-saw{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper)}
 .x-legend{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:center;font-size:.8rem;color:var(--ink2)}
@@ -633,7 +634,7 @@ html.a11y-dark :is(button,a,input,select,textarea,summary,[tabindex]):focus-visi
 //      JS で描き替えるゲームは、画面の関数の最初で Core.screens.mark("dex")、起動時に Core.screens.route({...}, home) で「戻る」がホームへ戻る
 //   5: 2026-11-27 全ゲームで同じ場所（ページのいちばん上の右）に「？ 遊び方」を置く（Core.help）。止まるような不具合が起きたら
 //      ページの上に帯を出し、本人が「知らせる」を押したときだけ感想フォームが開く（Core.errBar）。エラーの文は保存も自動送信もしない
-//      （satou さん 2026-11-27「個人データ・個人情報をとらない」。外のサーバーへ自動で送ると IP が必ず届くため、自動の通知と集計は作らない）。
+//      （satou さん 2026-11-27「個人データ・個人情報をとらない」。外のサーバーへ自動で送ると IP がいつも届くため、自動の通知と集計は作らない）。
 //      MDN「Window: error event」「unhandledrejection event」・NN/g「Error-Message Guidelines」（何が起きたか・どうすればよいかを書く）
 //   7: 2026-11-27 Ko-fi 応援の一文（Core.kofi）と応援先（Core.KOFI）を足した。201本が同じ一文を手で写し、文言が4通り以上に分かれていた
 //      （incidents/2026-11-27-kofi-line-hand-copied.md）。出す条件（初めて・まちがい0・練習でない日だけ）はゲームの記録しだいなので、ゲームに残す
@@ -642,7 +643,7 @@ html.a11y-dark :is(button,a,input,select,textarea,summary,[tabindex]):focus-visi
 //      X は公式の Web Intent（docs.x.com「Web Intent」: https://x.com/intent/tweet?text=）、LINE は LINE URL スキーム
 //      （developers.line.biz「LINE URLスキームでLINEの機能を使う」: https://line.me/R/share?text=）、端末の共有は Web Share API
 //      （MDN「Navigator: share()」: 押したその場でだけ呼ぶ・やめたら AbortError）。共有する文は公開の URL（? と # を外す）とゲームの名前・結果だけ
-//      （遊ぶ人の名前・引き継ぎの #hk=・記録の中身は入れない）。どれも押した人が自分で開くリンクで、外へ勝手に送らない
+//      （遊ぶ人の名前・引き継ぎの #hk=・記録の中身は入れない）。どれも押した人が自分で選んで進むリンクで、外へ勝手に送らない
 // 決まり: 外へ通信しない。ゲームの関数の名前（toast・buzz など）は上書きしない（Core.toast などで呼ぶ）。
 (function () {
   "use strict";
@@ -1036,6 +1037,13 @@ html.a11y-dark :is(button,a,input,select,textarea,summary,[tabindex]):focus-visi
       e.preventDefault();
       open(a.getAttribute("data-share") || null);
     });
+    // 「共有」は2字なので、フッターの字が大きいと幅が 44px に足りない（2026-11-27 古いゲームの QA で見つけた）。押す所は 44px 以上（WCAG 2.5.8・ui-rules U1）
+    if (doc.head && doc.createElement) {
+      const st = doc.createElement("style");
+      st.id = "core-share-min";
+      st.textContent = "[data-share]{min-width:44px;justify-content:center;text-align:center}";
+      doc.head.appendChild(st);
+    }
     return { url, name, tags, tagged, links, copy, send, wire, open };
   })();
 
@@ -1171,7 +1179,7 @@ html.a11y-dark :is(button,a,input,select,textarea,summary,[tabindex]):focus-visi
   if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", () => setTimeout(help, 0)); else setTimeout(help, 0);
 
   // bindFeedback を呼ばないゲーム（形のちがうゲームに sync-template が「感想・質問を送る」を足した所）でも、data-feedback を押せばフォームへ。
-  // a でないもの（button）は新しいタブで開く
+  // a でないもの（button）は新しいタブに出す
   if (doc.addEventListener) doc.addEventListener("click", (e) => {
     const a = e.target && e.target.closest ? e.target.closest("[data-feedback]") : null;
     if (!a || (fbBound && a.tagName === "A")) return; // a は bindFeedback が作る（ゲームの付属情報が入る）
@@ -1203,7 +1211,7 @@ html.a11y-dark :is(button,a,input,select,textarea,summary,[tabindex]):focus-visi
   "use strict";
   if (window.Kiroku && window.Kiroku.v) return;
   const doc = document;
-  const KEY = "kiroku-v1", NEWS = "news-v1";
+  const KEY = "kiroku-v1", NEWS = "news-v1"; // gitleaks:allow 記録の名前（鍵ではない）
   // 全ゲーム共通の知らせ（新しいものを上に。日付は日本時間の YYYY-MM-DD）
   const COMMON_NEWS = [
     { d: "2026-11-26", t: "「見やすさ」から、文字の大きさ（小・中・大）と、長く遊んだら知らせる時間を選べるようになりました。どのゲームにも同じ設定が使われます。フッターの「成績」で、遊んだゲームの成績をまとめて見られます。" },
@@ -1211,7 +1219,7 @@ html.a11y-dark :is(button,a,input,select,textarea,summary,[tabindex]):focus-visi
   const read = (k) => { try { const v = JSON.parse(localStorage.getItem(k) || "{}"); return v && typeof v === "object" && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } };
   const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
   const n0 = (v) => (window.Core ? Core.num(v) : Math.max(0, Math.floor(+v) || 0));
-  // HTML に入れる文字は必ずここを通す（Core が無いページでも < " などを替える。2026-11-26 CodeQL「DOM text reinterpreted as HTML」）
+  // HTML に入れる文字はいつもここを通す（Core が無いページでも < " などを替える。2026-11-26 CodeQL「DOM text reinterpreted as HTML」）
   const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
   const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ESC[c]);
   const today = () => (window.Core ? Core.today() : new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10));
@@ -1802,7 +1810,7 @@ function play() {
     ${showTip ? `<div class="tip"><b>今日のきほん：${tip[0]}</b><br>${tip[1]}</div>` : ""}
     <div class="ad ${isAd ? MCLS[P.media] || "m0" : "act"}" id="card">
       <div class="bar"><span>${P.sim ? (P.sim.kind === "day" ? "⛈" : "📊") : "📘"} ${esc(P.media)}</span><span>${/^touban/.test(P.kind) ? "出す？" : /%$/.test(P.ans) ? "何%？" : /日$/.test(P.ans) ? "何日？" : "どれ？"}</span></div>
-      ${P.sim ? `<div class="sky" id="sky">${figSvg(P.sim, P.sim.show === true ? 1 : 0)}</div>` : ""}
+      ${P.sim ? `<div class="sky" id="sky">${figSvg(P.sim, P.sim.show === true ? 1 : 0)}</div>${P.sim.kind === "strip" ? `<div class="dtab-w">${dataTable(P.sim, false)}</div>` : ""}` : ""}
       <p class="sit" data-a11y-say>${esc(P.q)}</p>
       ${isAd ? `<p class="q" id="ask" data-a11y-say>${esc(P.q)}</p>` : ""}
       ${cur.wrong.length || cur.step === 2 ? "" : `<div class="sure-row">${Depth.sureHtml()}</div>`}
@@ -1900,6 +1908,7 @@ function solved() {
     ${cur.jd && cur.jd.sure ? `<p class="sure-res">${cur.jd.ok ? "🎯 自信ありで当てた" : "🎯 自信ありでまちがえた。ここを覚えよう"}</p>` : ""}
     <p class="why" data-a11y-say><b>${esc(P.name)}：</b>${esc(P.why)}</p>
     ${P.sim ? `<div class="tl" id="tl">${figSvg(P.sim, P.sim.kind === "day" ? 2 : 1)}${P.sim.kind === "day" ? "" : countHtml(P.sim)}</div>
+    ${P.sim.kind === "strip" ? dataTable(P.sim, true) : ""}
     <details class="more"><summary>くわしく（数え方と式）</summary><p>${calcText(P.sim)}</p></details>
     ${P.sim.kind === "day" ? "" : `<button class="sub" id="go-x2">⚖ この${P.sim.days.length}日で、基準を動かしてみる</button><div class="xp" id="xbox" hidden></div>`}` : ""}
     ${srcHtml(P)}
@@ -2117,6 +2126,11 @@ function stripSvg(sim, show) {
   </svg>`;
 }
 const figSvg = (sim, show) => (sim.kind === "day" ? daySvg(sim, show) : stripSvg(sim, show));
+// 記録の図と同じ日ごとの数を、表でも読めるようにする（読み上げで数えられるように。答える前は結果を伏せる。CodeRabbit #1）
+function dataTable(sim, done) {
+  const t = sim.t, hide = sim.free && !done;
+  return `<details class="more dtab"><summary>表で見る（${sim.days.length}日の雲の強さと、来たか）</summary><table><thead><tr><th scope="col">日</th><th scope="col">雲の強さ</th><th scope="col">来たか</th>${done ? '<th scope="col">結果</th>' : ""}</tr></thead><tbody>${sim.days.map((x, i) => `<tr><th scope="row">${i + 1}日</th><td>${x.s}</td><td>${x.came ? "☔ 来た" : "来なかった"}</td>${done ? `<td>${RNAME[G.resOf(x.s >= t, x.came)]}</td>` : ""}</tr>`).join("")}</tbody></table>${hide ? "" : `<p>基準は${t}以上で出す${sim.t0 != null ? `（前の基準は${sim.t0}）` : ""}。</p>`}</details>`;
+}
 function heroSvg() { const P = G.make("zero|hero20"); return stripSvg(P.sim, 2); }
 // 答えの図の下で、当たり・空振り・見逃し・正しく出さないを数え上げる（字の出方に合わせる。「動きを減らす」ではすぐ数え終える）
 let COUNT = [];
@@ -2172,9 +2186,9 @@ function seesawSvg(b, c) {
   </svg>`;
 }
 function mountExplore(el, days, t0) {
-  let t = Math.max(0, Math.min(100, Math.round(t0 / 5) * 5));
+  let t = Math.max(0, Math.min(101, Math.round(t0))); // 答えの基準を丸めずに使う（CodeRabbit #1）
   const N = days.length;
-  let best = 0, bm = 1e9; for (let u = 0; u <= 100; u += 5) { const o = G.tally(days, u); if (o.b + o.c < bm) { bm = o.b + o.c; best = u; } }
+  let best = 0, bm = 1e9; for (let u = 0; u <= 101; u++) { const o = G.tally(days, u); if (o.b + o.c < bm) { bm = o.b + o.c; best = u; } }
   const draw = () => {
     const o = G.tally(days, t);
     el.querySelector(".x-map").innerHTML = labSvg(days, t);
@@ -2185,19 +2199,19 @@ function mountExplore(el, days, t0) {
     const ob = G.tally(days, best);
     el.querySelector(".x-note").textContent = o.b === 0 && o.c === 0 ? "空振りも見逃しも0です。" : o.b === 0 ? `空振りは0。でも見逃しが${o.c}日あります。` : o.c === 0 ? `見逃しは0。でも空振りが${o.b}日あります。` : `どの基準でも、空振りと見逃しの両方を0にはできません（合わせていちばん少ないのは基準${best}：空振り${ob.b}・見逃し${ob.c}）。`;
     const r = el.querySelector(".x-range"); r.value = String(t); r.setAttribute("aria-valuetext", `基準${t}`);
-    el.querySelector(".x-dn").disabled = t <= 0; el.querySelector(".x-up").disabled = t >= 100;
+    el.querySelector(".x-dn").disabled = t <= 0; el.querySelector(".x-up").disabled = t >= 101;
   };
   el.innerHTML = `<p class="x-res" role="status" aria-live="polite"></p>
     <div class="x-saw"></div>
     <div class="x-map"></div>
     <div class="x-legend" aria-hidden="true"><span>● 当たり</span><span>▲ 空振り</span><span>✕ 見逃し</span><span>○ 正しく出さない</span></div>
-    <div class="x-ctl"><button type="button" class="sub x-dn" aria-label="基準を5下げる">−5</button><input type="range" class="x-range" min="0" max="100" step="5" aria-label="出す基準（雲の強さ）"><button type="button" class="sub x-up" aria-label="基準を5上げる">＋5</button></div>
+    <div class="x-ctl"><button type="button" class="sub x-dn" aria-label="基準を5下げる">−5</button><input type="range" class="x-range" min="0" max="101" step="1" aria-label="出す基準（雲の強さ）"><button type="button" class="sub x-up" aria-label="基準を5上げる">＋5</button></div>
     <div class="c-grid x-cnt"></div>
     <p class="x-rate note"></p>
     <p class="x-note note"></p>`;
   el.querySelector(".x-range").oninput = (e) => { t = +e.target.value; draw(); };
   el.querySelector(".x-dn").onclick = () => { t = Math.max(0, t - 5); draw(); };
-  el.querySelector(".x-up").onclick = () => { t = Math.min(100, t + 5); draw(); };
+  el.querySelector(".x-up").onclick = () => { t = Math.min(101, t + 5); draw(); };
   draw();
 }
 function explore(days, t, inline) {

@@ -136,6 +136,8 @@ const SRCOK = /^https:\/\/(www\.data\.jma\.go\.jp\/fcd\/yoho\/kensho\/explanatio
 
 // ---- 2. ファイルの中身 ----
 const html = readFileSync(path.join(root, "index.html"), "utf8"), gen = readFileSync(path.join(root, "data.js"), "utf8"), readme = readFileSync(path.join(root, "README.md"), "utf8");
+// ひな形の写し（<!-- 名前:begin〜end -->）はゲームの言葉ではないので外し、Core.kofi・Core.KOFI は写す前の形にもどして見る（shared-workflows の sync-template が足した）
+const gameOwn = (t) => t.replace(/<!-- ([a-z0-9-]+):begin[\s\S]*?<!-- \1:end -->/g, "").split("${Core.KOFI}").join("https://ko-fi.com/satouaaaaa").replace(/Core\.kofi\(("(?:[^"\\]|\\.)*"), ("(?:[^"\\]|\\.)*")\)/g, (m, a, b) => "`<p class=\"note kofi\">" + JSON.parse(a) + "、<a href=\"https://ko-fi.com/satouaaaaa\" target=\"_blank\" rel=\"noopener\">Ko-fi でコーヒー1杯の応援</a>をもらえると、" + JSON.parse(b) + "の励みになります（任意・遊ぶのはずっと無料）。</p>`");
 const ext = [...html.matchAll(/(?:src|href)="(https?:[^"]+)"/g)].map((m) => m[1]).filter((u) => !/^https:\/\/fonts\.googleapis\.com(\/|$)|^https:\/\/ko-fi\.com\/satouaaaaa$/.test(u));
 check("外から読むのは文字（Google Fonts）だけ。スクリプト・広告・解析を入れない（出典のリンクは押したときに開くだけ）", ext.length === 0 && ![...html.matchAll(/<script[^>]+src="([^"]+)"/g)].some((m) => /^https?:/.test(m[1])), ext.join(","));
 check("CSP で通信先を自分だけにしている", /connect-src 'self'/.test(html) && !/connect-src[^;"]*https/.test(html));
@@ -143,10 +145,10 @@ check("Math.random は練習・とことんの種だけ（今日の5問・上級
 check("乱数は sort の比較の中で引かない（ブラウザで引く回数が変わる）", !/\.sort\(\s*\([^)]*\)\s*=>[^\n;]*\b(R|rng|rand|Math\.random)\s*\(/.test(html + gen));
 { const inl = html.split("<script>").slice(1).map((x) => x.split("</" + "script>")[0]).join("\n"); // index.html の中の script も見る（nemuri-kotsu#1 で行の途中に // を入れて画面が動かなくなった）
   check("一行の式の途中にコメント // を足さない（行の残りが消える。rosen-hitofude 2026-11-04・nemuri-kotsu#1）", !/;\s*\/\/[^\n]*;\s*\w/.test((gen + "\n" + inl).split("\n").filter((l) => !l.trim().startsWith("//")).join("\n"))); }
-check("言い方：「絶対」と言い切らない", !/絶対に安全|絶対に来ない|必ず上陸/.test(html + gen + readme));
+check("言い方：「絶対」と言い切らない", !/絶対に安全|絶対に来ない|必ず上陸/.test(gameOwn(html) + gen + readme));
 { const howto = (html.match(/<dialog id="howto"[\s\S]*?<\/dialog>/) || [""])[0], ab = (html.match(/function about\(\)[\s\S]*?\n}/) || [""])[0], dis = (t) => /作り話/.test(t) && /本物の天気の記録ではありません/.test(t) && /気象庁/.test(t) && /見逃し/.test(t) && /空振り/.test(t);
   check("言い方：遊び方・「このゲームについて」・README のどれにも、空振り・見逃し（気象庁）と、雲の強さと来るかどうかは作り話で本物の天気の記録ではないことがある", dis(howto) && dis(ab) && dis(readme), `遊び方 ${dis(howto)}・について ${dis(ab)}・README ${dis(readme)}`); }
-check("写し元（予報円のなか・その元の速報まにあう？・風力階級よみ・星の等級よみ）の言葉が残っていない（game-dev.md A 手順5）", !/予報円|台風|進路|暴風|yohouen|yhn|YHN|kazu\d|流してみる|速報まにあう|地震|震源|P波|S波|揺れ|まにあう|sokuho|skh|SKH|風力|風速|ノット|吹き流し|fry-|FRY|fuuryoku|等級よみ|等星|肉眼|天文|toukyu|tky-/.test(html.replace(/<!-- a11y:begin[\s\S]*?a11y:end -->/, "").replace(/<!-- store:begin[\s\S]*?store:end -->/, "").replace(/<!-- core:begin[\s\S]*?core:end -->/, "").replace(/<!-- kiroku:begin[\s\S]*?kiroku:end -->/, "") + gen + readme + readFileSync(path.join(root, "manifest.webmanifest"), "utf8") + readFileSync(path.join(root, "tools/make-og.cjs"), "utf8") + readFileSync(path.join(root, "tools/make-icons.cjs"), "utf8") + readFileSync(path.join(root, "AGENTS.md"), "utf8").replace("予報円のなか（yohouen-naka）から写した", "")));
+check("写し元（予報円のなか・その元の速報まにあう？・風力階級よみ・星の等級よみ）の言葉が残っていない（game-dev.md A 手順5）", !/予報円|台風|進路|暴風|yohouen|yhn|YHN|kazu\d|流してみる|速報まにあう|地震|震源|P波|S波|揺れ|まにあう|sokuho|skh|SKH|風力|風速|ノット|吹き流し|fry-|FRY|fuuryoku|等級よみ|等星|肉眼|天文|toukyu|tky-/.test(gameOwn(html).replace(/<!-- a11y:begin[\s\S]*?a11y:end -->/, "").replace(/<!-- store:begin[\s\S]*?store:end -->/, "").replace(/<!-- core:begin[\s\S]*?core:end -->/, "").replace(/<!-- kiroku:begin[\s\S]*?kiroku:end -->/, "") + gen + readme + readFileSync(path.join(root, "manifest.webmanifest"), "utf8") + readFileSync(path.join(root, "tools/make-og.cjs"), "utf8") + readFileSync(path.join(root, "tools/make-icons.cjs"), "utf8") + readFileSync(path.join(root, "AGENTS.md"), "utf8").replace("予報円のなか（yohouen-naka）から写した", "")));
 { // ゲームごとに手で書く所（説明・遊び方・2段目の名前・ホームの1行目・2段目のまちがいの案内）が、このゲームの言葉で書いてある（incidents/2026-11-18-game-copy-hand-written-text.md）
   const desc = (html.match(/<meta name="description" content="([^"]+)"/) || [])[1] || "", howto = (html.match(/<dialog id="howto"[\s\S]*?<\/dialog>/) || [""])[0];
   check("手で書く所：説明・遊び方・2段目・ホームの1行目・2段目のまちがいの案内がこのゲームの言葉", /空振り/.test(desc) && /見逃し/.test(desc) && /「出す」か「出さない」/.test(howto) && /当たり・空振り・見逃し・正しく出さない/.test(howto) && G.ASK.day === "では、この日の結果は？" && /どちらも0にはできない/.test((html.match(/<p class="lead"[^>]*>[^<]*<br>[^<]*<\/p>/) || [""])[0]) && /✕ ちがいます。出したのに来なかった＝空振り、出さずに来た＝見逃しです。/.test(html));
@@ -154,7 +156,7 @@ check("写し元（予報円のなか・その元の速報まにあう？・風�
   check("共有画像の正解は、このゲームの答えの形（「空振り N日」）で、図の10日を数えた数と合う（基準50で空振り2日）", /line\("空振り 2日", 1\)/.test(og) && /基準50で、空振りは何日？/.test(og) && D.length === 10 && oc.fa === 2); }
 check("画面にお笑いの言葉を入れない（本物っぽく）", !/お笑い|ギャグ|ツッコミ|なんでやねん|（うそ）/.test(html + gen));
 check("引き継ぎ：transfer.js をゲームの script より前に、このゲームの記録のキー（記録・文字・復習）だけで読む・depth.js も前に読む", /<script src="transfer\.js" data-game="karaburi-minogashi" data-keys="krb-v1,krb-fs,krb-depth"><\/script>\s*<script src="depth\.js" data-game="karaburi-minogashi" data-key="krb-depth"><\/script>\s*<\/head>/.test(html) && html.indexOf('src="transfer.js"') < html.indexOf('src="data.js"') && /data-hk/.test(html) && existsSync(path.join(root, "transfer.js")));
-check("好きなだけ遊べる：チケット・回数の上限・🔒で開くモードを入れない（game-dev.md F1・F2）", !/🎫|チケット|すると開く|🔒/.test(html) && !/\blife\b|ELIFE/.test(html));
+check("好きなだけ遊べる：チケット・回数の上限・🔒で開くモードを入れない（game-dev.md F1・F2）", !/🎫|チケット|すると開く|🔒/.test(gameOwn(html)) && !/\blife\b|ELIFE/.test(gameOwn(html)));
 { const og = (k) => (html.match(new RegExp(`<meta (?:property|name)="${k}" content="([^"]+)"`)) || [])[1] || "";
   const png = readFileSync(path.join(root, "og.png"));
   check("SNS で貼ると絵と題が出る（OGP・1200×630・絶対URL）", og("og:title") && og("og:description") && og("og:image") === "https://satou-aaaaa.github.io/karaburi-minogashi/og.png" && og("twitter:card") === "summary_large_image" && png.readUInt32BE(16) === 1200 && png.readUInt32BE(20) === 630); }
@@ -208,8 +210,8 @@ try {
   const p = await newPage();
   check("はじめて開くと遊び方が出る", await p.locator("#core-coach").waitFor({ timeout: 3000 }).then(() => true, () => false));
   { const c = await browser.newContext(); const r = await c.newPage(); await r.goto(url); await r.waitForTimeout(200); let again = 0;
-    for (let i = 0; i < 10; i++) { await r.evaluate(() => localStorage.clear()); await r.reload(); await r.waitForTimeout(200); await r.keyboard.press("Escape"); await r.reload(); await r.waitForTimeout(200); again += await r.locator("#howto[open]").count(); }
-    check("遊び方を Esc で閉じてすぐ読み直しても出ない（10回）", again === 0);
+    for (let i = 0; i < 10; i++) { await r.evaluate(() => localStorage.clear()); await r.reload(); await r.waitForTimeout(200); const shown = await r.locator("#core-coach").isVisible().catch(() => false); await r.keyboard.press("Escape"); await r.reload(); await r.waitForTimeout(200); again += (shown ? 0 : 1) + await r.locator("#howto[open]").count() + ((await r.locator("#core-coach").isVisible().catch(() => false)) ? 1 : 0); }
+    check("はじめての案内（吹き出し）が出て、Esc で閉じてすぐ読み直しても、案内も遊び方も出ない（10回。CodeRabbit #1）", again === 0);
     { await r.evaluate(() => localStorage.clear()); await r.reload(); await r.waitForTimeout(200); const before = await r.locator("#core-coach").isVisible().catch(() => false); await r.keyboard.press("Escape"); await r.waitForTimeout(100); const now = await r.locator("#core-coach").isVisible().catch(() => false); await r.reload(); await r.waitForTimeout(200);
       check("はじめての案内は Esc で閉じ、すぐ読み直しても出ない（CodeRabbit #1）", before && !now && !(await r.locator("#core-coach").isVisible().catch(() => false)), `${before}/${now}`); }
     { await r.evaluate(() => localStorage.clear()); await r.reload(); await r.waitForTimeout(200); await r.click("#back"); await r.waitForTimeout(100); await r.click("#go-d"); await r.waitForTimeout(100);
@@ -526,7 +528,8 @@ try {
     for (let k = 0; k < 12; k++) { const { t, c } = await read(); const w = count(H, t); seenT.push(`${t}:${c.join("/")}`); if (c.join() !== [w.hit, w.fa, w.miss, w.cn].join() || !(await q.textContent(".x-res")).includes(`空振り${w.fa}日・見逃し${w.miss}日`)) badT.push(t); if (t >= 100) break; await q.click(".x-up"); }
     check("ためす：＋5 で基準100まで上げながら、どの基準でも当たり・空振り・見逃し・正しく出さないの数が別に数えた数と合う（同じ100日）", badT.length === 0 && seenT.length === 11, badT.join(",") + " " + seenT.join(" "));
     const up = await read(), w100 = count(H, 100);
-    check("ためす：基準100（いちばん上）では空振り0・見逃しが多い／−5で0まで下げると見逃し0・空振りが多い（シーソー）", up.t === 100 && w100.fa === 0 && w100.miss > 0 && await (async () => { await q.fill(".x-range", "0"); await q.dispatchEvent(".x-range", "input"); const z = await read(), w0 = count(H, 0); return z.t === 0 && w0.miss === 0 && w0.fa > 0 && z.c[1] === w0.fa && (await q.textContent(".x-note")).includes("見逃しは0"); })());
+    // 期待する数は固定せず、別に数えた数と比べる（強さ100・来ない日があると基準100でも空振りが残る。CodeRabbit #1）
+    check("ためす：基準を0まで下げると見逃し0・空振りが多い／上げるほど空振りが減り見逃しが増える（シーソー）", up.t === 100 && up.c[1] === w100.fa && up.c[2] === w100.miss && await (async () => { await q.fill(".x-range", "0"); await q.dispatchEvent(".x-range", "input"); const z = await read(), w0 = count(H, 0); return z.t === 0 && w0.miss === 0 && w0.fa > w100.fa && w100.miss > w0.miss && z.c[1] === w0.fa && (await q.textContent(".x-note")).includes("見逃しは0"); })());
     await q.fill(".x-range", "50"); await q.dispatchEvent(".x-range", "input");
     check("ためす：両方0にならないことを文で言う（どの基準でも…）と、気象庁の4つの割合を出す", (await q.textContent(".x-note")).includes("どの基準でも、空振りと見逃しの両方を0にはできません") && (await q.textContent(".x-rate")).includes(`空振り率 ${per(count(H, 50).fa, 100)}%`) && (await q.textContent(".x-rate")).includes(`捕捉率 ${per(count(H, 50).hit, count(H, 50).hit + count(H, 50).miss)}%`));
     check("ためす：100日の図に印が100個・シーソーの図・結果の文は role=status で、記録は増えない", await q.locator(".x-map .krb-d-hit, .x-map .krb-d-miss, .x-map .krb-d-fa, .x-map .krb-d-cn").count() === 100 && await q.locator(".x-saw svg").count() === 1 && await q.getAttribute(".x-res", "role") === "status" && await q.evaluate(() => localStorage.getItem("krb-v1")) === before);
@@ -536,11 +539,11 @@ try {
     check("記録の問題には10日の棒と基準の線が出る（問題の画面では結果の字を出さない）", await q.locator("#card .sky svg").count() === 1 && /10日の雲の強さ/.test(await q.getAttribute("#card .sky svg", "aria-label")) && await q.locator("#card .sky .krb-bar").count() === 10 && await q.locator("#card .sky .krb-th").count() === 1 && await q.locator("#card .sky text.krb-hit, #card .sky text.krb-fa").count() === 0);
     await solve(q);
     const tl = await q.getAttribute("#tl svg", "aria-label");
-    check("答えのあとに結果の字が1日ずつ出る図（数の読み上げ付き）と「くわしく」の式", !!tl && tl.includes(`当たり${cc.hit}日、空振り${cc.fa}日、見逃し${cc.miss}日、正しく出さない${cc.cn}日`) && await q.locator("#tl .pop").count() === 10 && (await q.textContent(".verdict .more")).includes("空振り率 ＝ 空振り ÷ 全部"), tl);
+    check("答えのあとに結果の字が1日ずつ出る図（数の読み上げ付き）と「くわしく」の式", !!tl && tl.includes(`当たり${cc.hit}日、空振り${cc.fa}日、見逃し${cc.miss}日、正しく出さない${cc.cn}日`) && await q.locator("#tl .pop").count() === 10 && (await q.textContent(".verdict .more:not(.dtab)")).includes("空振り率 ＝ 空振り ÷ 全部") && await q.locator(".verdict .dtab tbody tr").count() === 10, tl);
     check("数え上げ：数え終えると、終わりの一文が出る（9秒以内）", await q.waitForSelector(".c-fin:not([hidden])", { timeout: 9000 }).then(() => true, () => false));
     check("数え上げ：当たり・空振り・見逃し・正しく出さないの数が、別に数えた数と合う", [+(await q.textContent(".c-hit")), +(await q.textContent(".c-fa")), +(await q.textContent(".c-miss")), +(await q.textContent(".c-cn"))].join() === [cc.hit, cc.fa, cc.miss, cc.cn].join(), await q.textContent("#cnt"));
     await q.click("#go-x2"); await q.waitForTimeout(100);
-    check("答えのあとの「基準を動かしてみる」で、その10日・その基準のまま動かせる", await q.locator("#xbox:not([hidden]) .x-range").count() === 1 && await q.inputValue("#xbox .x-range") === String(Math.round(sim.t / 5) * 5) && await q.locator("#xbox .x-map .krb-d-hit, #xbox .x-map .krb-d-miss, #xbox .x-map .krb-d-fa, #xbox .x-map .krb-d-cn").count() === 10);
+    check("答えのあとの「基準を動かしてみる」で、その10日・その基準のまま（丸めずに）動かせる", await q.locator("#xbox:not([hidden]) .x-range").count() === 1 && await q.inputValue("#xbox .x-range") === String(sim.t) && await q.locator("#xbox .x-map .krb-d-hit, #xbox .x-map .krb-d-miss, #xbox .x-map .krb-d-fa, #xbox .x-map .krb-d-cn").count() === 10);
     { // 当番：答える前は来たかどうかを見せず、正解したら見せる
       await q.evaluate(() => { __nm.save((s) => { s.runs.p = { mode: "p", date: __nm.todayKey(), list: ["touban0|tl3"], res: [], cur: null, id: "tl3" }; }); __nm.play("p"); });
       const before3 = await q.getAttribute("#card .sky svg", "aria-label"), P3 = await q.evaluate(() => __nm.cur().P);
@@ -549,7 +552,12 @@ try {
       check("当番：答える前は来たかどうかを見せず、正解すると来た・来なかったを見せて2段目へ", !/来た|来なかった/.test(before3) && after3.includes(P3.sim.came ? "大雨が来た" : "来なかった") && await q.locator(".why button").count() === 4 && (await q.textContent("#msg")).includes(P3.sim.came ? "大雨が来ました" : "来ませんでした"), `${before3} / ${after3}`); }
     { // 両方0にできない問題は、問題の画面で基準の線を引かない
       await q.evaluate(() => { __nm.save((s) => { s.runs.p = { mode: "p", date: __nm.todayKey(), list: ["zero|tl4"], res: [], cur: null, id: "tl4" }; }); __nm.play("p"); });
-      check("両方0の問題は、問題の画面で基準の線と「出す」の色を出さない（答えのあとに出す）", await q.locator("#card .sky .krb-th").count() === 0 && await q.locator("#card .sky .krb-bar.go").count() === 0); }
+      check("両方0の問題は、問題の画面で基準の線と「出す」の色を出さない（答えのあとに出す）", await q.locator("#card .sky .krb-th").count() === 0 && await q.locator("#card .sky .krb-bar.go").count() === 0);
+      const sz = await q.evaluate(() => __nm.cur().P.sim);
+      let bm = 1e9; for (let t = 0; t <= 101; t++) { const c = count(sz.days, t); bm = Math.min(bm, c.fa + c.miss); }
+      const cz = count(sz.days, sz.t);
+      check("両方0の問題の「いちばん少ない基準」は、全部の整数を調べた最小（CodeRabbit #1）", cz.fa + cz.miss === bm, `${sz.t}:${cz.fa + cz.miss}/${bm}`);
+      check("記録の問題は、図と同じ日ごとの強さと来たかを表でも読める（答える前は結果と基準を伏せる。CodeRabbit #1）", await q.locator("#card .dtab tbody tr").count() === 10 && !/空振り|見逃し|当たり|基準/.test(await q.evaluate(() => document.querySelector("#card .dtab").textContent.replace(/^[^)）]*[)）]/, ""))) && (await q.evaluate(() => document.querySelector("#card .dtab td").textContent)) === String(sz.days[0].s)); }
     { // 動きを減らす：すぐ数え終える
       await q.evaluate(() => { A11y.set("calm", true); __nm.save((s) => { s.runs.p = { mode: "p", date: __nm.todayKey(), list: ["sageta|tl2"], res: [], cur: null, id: "tl2" }; }); __nm.play("p"); });
       await solve(q); await q.waitForTimeout(50);
@@ -590,11 +598,12 @@ try {
   // キーボードだけで遊べる（Tab と Enter）
   {
     const q = await newPage(); await closeHow(q);
-    await q.focus("#go-d"); await q.keyboard.press("Enter"); await q.waitForTimeout(100);
-    const j = await ansIdx(q);
-    await q.focus(`.ch[data-j="${j}"]`); await q.keyboard.press("Enter"); await q.waitForTimeout(100);
-    if (await q.locator(".why button").count()) { await q.focus(`.why button[data-g="${await q.evaluate(() => __nm.cur().P.grp)}"]`); await q.keyboard.press("Enter"); await q.waitForTimeout(100); }
-    check("キーボードだけで選んで答えられる（2段目もキーボードで）", await q.locator(".verdict").count() === 1);
+    // focus() で飛ばず、Tab で正解のボタンまで移ってから Enter（ボタンが Tab の順から外れたら見つからない。CodeRabbit #1）
+    const tabTo = async (sel) => { for (let k = 0; k < 60; k++) { if (await q.evaluate((s) => !!document.activeElement && document.activeElement.matches(s), sel)) return true; await q.keyboard.press("Tab"); } return false; };
+    await q.evaluate(() => { __nm.save((s) => { s.runs.p = { mode: "p", date: __nm.todayKey(), list: ["touban0|kb1"], res: [], cur: null, id: "kb" }; }); __nm.play("p"); });
+    const j = await ansIdx(q), r1 = await tabTo(`.ch[data-j="${j}"]`); await q.keyboard.press("Enter"); await q.waitForTimeout(100);
+    const r2 = await tabTo(`.why button[data-g="${await q.evaluate(() => __nm.cur().P.grp)}"]`); await q.keyboard.press("Enter"); await q.waitForTimeout(100);
+    check("キーボードだけ（Tab で移って Enter）で選んで答えられる（2段目もキーボードで）", r1 && r2 && await q.locator(".verdict").count() === 1, `${r1}/${r2}`);
     await q.context().close();
   }
 } catch (e) { check("ブラウザでの検査が最後まで動く", false, e.stack.split("\n").slice(0, 3).join(" ")); }
